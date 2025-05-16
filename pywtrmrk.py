@@ -4,8 +4,12 @@ import boto3
 import botocore
 from PyPDF4 import PdfFileWriter, PdfFileReader
 
-S3_BUCKET_NAME = "pypdfwtrmrk"
+S3_BUCKET_NAME_IN = "pypdfwtrmrk"
+S3_BUCKET_NAME_OUT = "pypdfwtrmrk"
 S3_DEFAULT_WATERMAKR_FILE = "watermark-1.pdf"
+S3_DEFAULT_OUTPUT_FILE = "output.pdf"
+LAMBDA_LOCAL_FOLDER = "/tmp"
+
 s3_client = boto3.client('s3')
 
 def generate_file_watermark(input_pdf, output_pdf, watermark):
@@ -31,7 +35,8 @@ def s3_key_exists(bucket, key):
 def lambda_handler(event, context):
     try:
         watermark_file_name = event.get('watermark_name', S3_DEFAULT_WATERMAKR_FILE)
-        bname = event.get('bname', S3_BUCKET_NAME)
+        bname = event.get('bname', S3_BUCKET_NAME_IN)
+        outfname = event.get('outfname', S3_DEFAULT_OUTPUT_FILE)
         fname = event.get('fname', None)
 
         if not fname:
@@ -50,15 +55,16 @@ def lambda_handler(event, context):
 
         bucket = boto3.resource('s3').Bucket(s3_bucket_name)
 
-        local_input_file = '/tmp/' + s3_file_name
+        local_input_file = LAMBDA_LOCAL_FOLDER + '/' + s3_file_name
         bucket.download_file(s3_file_name, local_input_file)
 
-        local_watermark_file = '/tmp/' + watermark_file_name
+        local_watermark_file = LAMBDA_LOCAL_FOLDER + '/' + watermark_file_name
         bucket.download_file(watermark_file_name, local_watermark_file)
 
-        local_output_file = '/tmp/' + "output.pdf"
+        local_output_file = LAMBDA_LOCAL_FOLDER + '/' + outfname
         generate_file_watermark(local_input_file, local_output_file, local_watermark_file)
-        s3_client.put_object(Bucket=s3_bucket_name, Key="output.pdf", Body=open(local_output_file, 'rb'))
+        s3_client.put_object(Bucket=S3_BUCKET_NAME_OUT, Key=outfname, Body=open(local_output_file, 'rb'))
+        
         resp = dict(name=s3_bucket_name, file=s3_file_name)
         return {
             'statusCode': 200,
