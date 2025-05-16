@@ -85,8 +85,13 @@ Ensure that the Lambda execution role has the following permissions:
 3. The function downloads the PDF, applies a watermark, and saves the new file.
 4. The output watermarked PDF is uploaded to the output S3 bucket.
 
+## Examples
+
+- [Example input file](/input.pdf)
+- [Example watermark file](/watermark-1.pdf)
+- [Example output file](/output.pdf)
+
 ## License
 
 MIT License
 
-```
